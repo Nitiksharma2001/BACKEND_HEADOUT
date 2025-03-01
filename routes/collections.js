@@ -13,6 +13,16 @@ collectionsRouter.get('/', async (req, res) => {
   res.json({ game: unplayedGames[Math.floor(Math.random() * unplayedGames.length)] })
 })
 
+collectionsRouter.get('/score', async (req, res) => {
+  const { _id: userId, currentGameCycle, friends } = req.info
+  const selfScore = await scoreTillNow(userId, currentGameCycle)
+
+  const friendsList = friends.map(async friend => await userModel.findById(friend._id))
+  const friendsScore = friendsList.map(async friend => friend ? await scoreTillNow(friend._id, friend.currentGameCycle) : 0)
+
+  res.json({ friendsScore, selfScore })
+})
+
 collectionsRouter.post('/', async (req, res) => {
   const { _id: userId, currentGameCycle } = req.info
   const { alias, answer } = req.body
@@ -36,11 +46,10 @@ collectionsRouter.post('/', async (req, res) => {
     await user.save()
   }
 
-  res.json({ result: history.result })
+  res.json({ result: history.result, funFacts: game.funFacts })
 })
 
 collectionsRouter.get('/countries', async (req, res) => {
   const rows = await gameModel.find()
-
-  res.json({ countries: rows.map((row) => row.name) })
+  res.json({ countries: Array.from(new Set(rows.map((row) => row.name))) })
 })

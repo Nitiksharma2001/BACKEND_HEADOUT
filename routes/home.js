@@ -10,7 +10,7 @@ homeRouter.get('/:friendUserName', async (req, res) => {
 
   const friend = await userModel.findOne({ username: friendUserName })
 
-  const friendScore = friendUserName ? await scoreTillNow(friend._id, friend.currentGameCycle) : 0
+  const friendScore = friend ? await scoreTillNow(friend._id, friend.currentGameCycle) : 0
   const selfScore = await scoreTillNow(userId, currentGameCycle)
 
   res.json({ friendScore, selfScore })

@@ -12,7 +12,8 @@ export async function scoreTillNow(userId, currentGameCycle) {
 }
 
 export async function notPlayedGames(userId, currentGameCycle) {
+
   const gamesPlayed = await historyModel.find({ userId, gameCycle: currentGameCycle })
   const gamePlayedIds = gamesPlayed.map((game) => game.gameId)
-  return await gameModel.find({ _id: { $nin: gamePlayedIds } })
+  return await gameModel.find({ _id: { $nin: gamePlayedIds } }).select('clues alias')
 }

@@ -5,13 +5,30 @@ import { scoreTillNow } from './helper/collections.js'
 export const userRouter = Router()
 
 userRouter.post('/', async (req, res) => {
-  const { username } = req.body
+  const { username, friends } = req.body
   const existedUser = await userModel.findOne({ username })
+
   if (existedUser) {
     return res.json({ message: 'username already existed', error: null })
   }
-  const newUser = await userModel.create({ username })
+
+  const getFriendIds = async (friends) => {
+    if (friends.length === 0) return []
+    const friendsList = friends.map(async (username) => await userModel.findOne({ username }))
+    const friendsIds = (await Promise.all(friendsList))
+      .filter((friend) => friend)
+      .map((friend) => friend._id)
+    return friendsIds
+  }
+
+  const newUser = await userModel.create({ username, friends: await getFriendIds(friends) })
   res.json({ message: 'user created successfully', user: newUser, error: null })
+})
+
+userRouter.get('/exists/:username', async (req, res) => {
+  const { username } = req.params
+  const existedUser = await userModel.findOne({ username })
+  return res.json({ exist: existedUser ? true : false, error: null })
 })
 
 userRouter.get('/:username', async (req, res) => {
