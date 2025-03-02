@@ -6,6 +6,7 @@ import { userRouter } from './routes/user.js'
 import { collectionsRouter } from './routes/collections.js'
 import { authentication } from './middlewares/user.js'
 import { homeRouter } from './routes/home.js'
+import { corsHeaders } from './middlewares/cors.js'
 
 const PORT = process.env.PORT || 3000
 const DATABASE_CONNECTION_URL = process.env.DATABASE_CONNECTION_URL
@@ -13,14 +14,8 @@ const DATABASE_CONNECTION_URL = process.env.DATABASE_CONNECTION_URL
 const app = express()
 async function connectDb() {
   await mongoose.connect(DATABASE_CONNECTION_URL + '/headout')
+  app.use(corsHeaders)
   app.use(express.json())
-  app.use(
-    cors({
-      origin: '*',
-      credentials: true, //access-control-allow-credentials:true
-      optionSuccessStatus: 200,
-    })
-  )
   app.use('/user', userRouter)
   app.use('/game', authentication, collectionsRouter)
   app.use('/home', authentication, homeRouter)
