@@ -17,8 +17,14 @@ collectionsRouter.get('/score', async (req, res) => {
   const { _id: userId, currentGameCycle, friends } = req.info
   const selfScore = await scoreTillNow(userId, currentGameCycle)
 
-  const friendsList = friends.map(async friend => await userModel.findById(friend._id))
-  const friendsScore = friendsList.map(async friend => friend ? await scoreTillNow(friend._id, friend.currentGameCycle) : 0)
+  const friendsList = await Promise.all(friends.map((friend) => userModel.findById(friend._id)))
+  const friendsScore = await Promise.all(
+    friendsList.map(async (friend) =>
+      friend
+        ? { score: await scoreTillNow(friend._id, friend.currentGameCycle), username: friend.username }
+        : { score: 0, username: friend.username }
+    )
+  )
 
   res.json({ friendsScore, selfScore })
 })
