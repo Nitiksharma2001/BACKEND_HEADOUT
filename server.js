@@ -14,7 +14,13 @@ const app = express()
 async function connectDb() {
   await mongoose.connect(DATABASE_CONNECTION_URL + '/headout')
   app.use(express.json())
-  app.use(cors({ origin: process.env.FRONTEND_URL }))
+  app.use(
+    cors({
+      origin: '*',
+      credentials: true, //access-control-allow-credentials:true
+      optionSuccessStatus: 200,
+    })
+  )
   app.use('/user', userRouter)
   app.use('/game', authentication, collectionsRouter)
   app.use('/home', authentication, homeRouter)
