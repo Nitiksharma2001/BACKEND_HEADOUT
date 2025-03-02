@@ -16,11 +16,11 @@ async function connectDb() {
   await mongoose.connect(DATABASE_CONNECTION_URL + '/headout')
   app.use(
     cors({
-      origin: process.env.FRONTEND_URL, // Replace with your frontend URL
-      methods: "GET,POST,PUT,DELETE",
-      allowedHeaders: "Content-Type,Authorization",
+      origin: ['http://localhost:5173', process.env.FRONTEND_URL], // Replace with your frontend URL
+      methods: 'GET,POST,PUT,DELETE',
+      allowedHeaders: 'Content-Type, Authorization',
     })
-  );
+  )
   app.use(express.json())
   app.use('/user', userRouter)
   app.use('/game', authentication, collectionsRouter)
