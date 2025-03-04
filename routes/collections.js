@@ -5,27 +5,29 @@ import { userModel } from '../models/user.js'
 import { notPlayedGames, scoreTillNow } from './helper/collections.js'
 
 const [CORRECT_POINT, INCORRECT_POINT] = [10, -5]
+
 export const collectionsRouter = Router()
 
 collectionsRouter.get('/', async (req, res) => {
-  const { _id: userId, currentGameCycle } = req.info
-  const unplayedGames = await notPlayedGames(userId, currentGameCycle)
-  res.json({ game: unplayedGames[Math.floor(Math.random() * unplayedGames.length)] })
+  const { _id: userId } = req.info
+  const unplayedGames = await notPlayedGames(userId)
+  const randomIndex = Math.floor(Math.random() * unplayedGames.length)
+  res.json({ game: unplayedGames[randomIndex], message: 'new game' })
 })
 
 collectionsRouter.get('/score', async (req, res) => {
-  const { _id: userId, currentGameCycle, friends } = req.info
-  const selfScore = await scoreTillNow(userId, currentGameCycle)
+  const { _id: userId, friends } = req.info
 
+  const selfScore = await scoreTillNow(userId)
   const friendsList = await Promise.all(friends.map((friend) => userModel.findById(friend._id)))
   const friendsScore = await Promise.all(
-    friendsList.map(async (friend) =>
-      friend
-        ? { score: await scoreTillNow(friend._id, friend.currentGameCycle), username: friend.username }
-        : { score: 0, username: friend.username }
-    )
+    friendsList.map(async ({_id, username}) => {
+      return {
+        score: await scoreTillNow(_id),
+        username,
+      }
+    })
   )
-
   res.json({ friendsScore, selfScore })
 })
 
@@ -34,6 +36,10 @@ collectionsRouter.post('/', async (req, res) => {
   const { alias, answer } = req.body
 
   const game = await gameModel.findOne({ alias })
+
+  if(!game){
+    return res.json({ message: 'invalid game' })
+  }
 
   const history = await historyModel.create({
     userId,
@@ -45,7 +51,7 @@ collectionsRouter.post('/', async (req, res) => {
     },
   })
 
-  const uplayedGames = await notPlayedGames(userId, currentGameCycle)
+  const uplayedGames = await notPlayedGames(userId)
   if (uplayedGames.length === 0) {
     const user = await userModel.findById(userId)
     user.currentGameCycle += 1
@@ -56,6 +62,6 @@ collectionsRouter.post('/', async (req, res) => {
 })
 
 collectionsRouter.get('/countries', async (req, res) => {
-  const rows = await gameModel.find()
-  res.json({ countries: Array.from(new Set(rows.map((row) => row.name))) })
+  const rows = await gameModel.find().distinct('name')
+  res.json({ countries: rows })
 })

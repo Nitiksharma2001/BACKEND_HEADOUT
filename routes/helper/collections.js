@@ -1,19 +1,20 @@
-import { gameModel } from "../../models/game.js"
-import { historyModel } from "../../models/history.js"
+import { gameModel } from '../../models/game.js'
+import { historyModel } from '../../models/history.js'
+import { userModel } from '../../models/user.js'
 
-export async function scoreTillNow(userId, currentGameCycle) {
+export async function scoreTillNow(userId) {
+  const { currentGameCycle } = await userModel.findById(userId)
   const gamesOfUser = await historyModel.find({
     userId,
     gameCycle: currentGameCycle,
   })
-
-  if (gamesOfUser.length === 0) return 0
   return gamesOfUser.reduce((acc, curr) => acc + curr.result.score, 0)
 }
 
-export async function notPlayedGames(userId, currentGameCycle) {
-
-  const gamesPlayed = await historyModel.find({ userId, gameCycle: currentGameCycle })
-  const gamePlayedIds = gamesPlayed.map((game) => game.gameId)
+export async function notPlayedGames(userId) {
+  const { currentGameCycle } = await userModel.findById(userId)
+  const gamePlayedIds = await historyModel
+    .find({ userId, gameCycle: currentGameCycle })
+    .select('_id')
   return await gameModel.find({ _id: { $nin: gamePlayedIds } }).select('clues alias')
 }
