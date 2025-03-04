@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { userModel } from '../models/user.js'
-import { ObjectId } from 'mongoose'
 
 export const userRouter = Router()
 
@@ -28,19 +27,15 @@ userRouter.post('/', async (req, res) => {
   // if the username already existed, update the username with new friends
   const existedUser = await userModel.findOne({ username })
   if (existedUser) {
-    existedUser.friends = Array.from(
-      new Set([
-        ...existedUser.friends.map((id) => id.toString()),
-        ...friendIds.map((id) => id.toString()),
-      ])
-    ).map((id) => {
-      new ObjectId(id)
-    })
-    existedUser.save()
+    const updatedUser = await userModel.findOneAndUpdate(
+      { username },
+      { $addToSet: { friends: { $each: friendIds } } },
+      { new: true }
+    )
 
     return res.json({
       message: 'updated user with new friends',
-      user: existedUser,
+      user: updatedUser,
       error: null,
     })
   }
@@ -48,13 +43,4 @@ userRouter.post('/', async (req, res) => {
   // if the username not already existed, create username with new friends
   const newUser = await userModel.create({ username, friends: friendIds })
   res.json({ message: 'user created successfully', user: newUser, error: null })
-})
-
-userRouter.get('/:username', async (req, res) => {
-  const { username } = req.params
-  const existedUser = await userModel.findOne({ username })
-  if (existedUser) {
-    return res.json({ user: existedUser, message: 'signin successfully', error: null })
-  }
-  res.json({ message: 'user does not exists', error: null })
 })
